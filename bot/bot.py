@@ -178,20 +178,27 @@ WEBAPP_DIR = Path(__file__).parent / "webapp"
 
 
 async def start_web_server():
-    """Раздаёт Mini App по адресу сервиса (Railway передаёт PORT)."""
-    port = os.getenv("PORT")
-    if not port:
-        return
+    """Раздаёт Mini App по публичному адресу сервиса (Railway)."""
+    port = int(os.getenv("PORT") or 8080)
+    index_file = WEBAPP_DIR / "index.html"
+    if not index_file.exists():
+        logging.error("НЕ НАЙДЕН файл %s — положи папку webapp рядом с bot.py", index_file)
+
     app = web.Application()
 
     async def index(_):
-        return web.FileResponse(WEBAPP_DIR / "index.html")
+        if index_file.exists():
+            return web.FileResponse(index_file)
+        return web.Response(status=500, text="webapp/index.html не найден рядом с bot.py")
+
+    async def health(_):
+        return web.Response(text="ok")
 
     app.router.add_get("/", index)
-    app.router.add_get("/health", lambda _: web.Response(text="ok"))
+    app.router.add_get("/health", health)
     runner = web.AppRunner(app)
     await runner.setup()
-    await web.TCPSite(runner, "0.0.0.0", int(port)).start()
+    await web.TCPSite(runner, "0.0.0.0", port).start()
     logging.info("Mini App доступен на порту %s", port)
 
 
