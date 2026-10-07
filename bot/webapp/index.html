@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>Готовы ли вы к международному собесу?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #130B20;
+    --bg-soft: #1B1230;
+    --card: #201638;
+    --card-line: #362A55;
+    --accent: #B69CFF;
+    --accent-dim: #7C64B8;
+    --gold: #F2C879;
+    --text: #F4EFFF;
+    --text-muted: #A79BC7;
+    --ok: #7FD9A6;
+    --warn: #F0A85B;
+    --radius: 18px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(circle at 15% -10%, rgba(182,156,255,0.16), transparent 45%),
+      radial-gradient(circle at 100% 10%, rgba(242,200,121,0.10), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Manrope', sans-serif;
+    min-height:100%;
+    display:flex;
+    justify-content:center;
+    padding:24px 16px calc(40px + env(safe-area-inset-bottom));
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  .app{
+    width:100%;
+    max-width:640px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:28px;
+    color:var(--text-muted);
+    font-size:13px;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  .brand .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--gold);
+    box-shadow:0 0 0 4px rgba(242,200,121,0.15);
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:clamp(26px, 5vw, 34px);
+    font-weight:700;
+    line-height:1.15;
+    margin-bottom:10px;
+    letter-spacing:-0.01em;
+  }
+  .lede{
+    color:var(--text-muted);
+    font-size:15.5px;
+    line-height:1.55;
+    margin-bottom:30px;
+    max-width:52ch;
+  }
+
+  /* ---- signal meters ---- */
+  .signals{
+    display:flex;
+    gap:14px;
+    margin-bottom:28px;
+  }
+  .signal{
+    flex:1;
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:14px;
+    padding:12px 12px 14px;
+  }
+  .signal-label{
+    font-size:11px;
+    color:var(--text-muted);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-bottom:10px;
+    min-height:28px;
+    line-height:1.35;
+  }
+  .bars{
+    display:flex;
+    align-items:flex-end;
+    gap:3px;
+    height:30px;
+  }
+  .bars span{
+    flex:1;
+    background:var(--card-line);
+    border-radius:2px;
+    transition:background .35s ease, box-shadow .35s ease;
+  }
+  .bars span:nth-child(1){height:35%;}
+  .bars span:nth-child(2){height:55%;}
+  .bars span:nth-child(3){height:75%;}
+  .bars span:nth-child(4){height:100%;}
+  .bars span:nth-child(5){height:65%;}
+  .signal.active .bars span{background:var(--accent);}
+  .signal.done-ok .bars span{background:var(--ok); box-shadow:0 0 10px rgba(127,217,166,0.35);}
+  .signal.done-warn .bars span{background:var(--warn); box-shadow:0 0 10px rgba(240,168,91,0.35);}
+
+  /* ---- quiz card ---- */
+  .stage{position:relative;}
+  .qcounter{
+    font-size:13px;
+    color:var(--accent);
+    font-weight:600;
+    margin-bottom:10px;
+    letter-spacing:0.02em;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:var(--radius);
+    padding:28px 26px 24px;
+  }
+  .qtext{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:20px;
+    font-weight:600;
+    line-height:1.35;
+    margin-bottom:22px;
+  }
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .opt{
+    text-align:left;
+    background:var(--bg-soft);
+    border:1px solid var(--card-line);
+    color:var(--text);
+    padding:14px 16px;
+    border-radius:12px;
+    font-family:'Manrope', sans-serif;
+    font-size:14.5px;
+    line-height:1.4;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .1s ease, background .15s ease;
+  }
+  .opt:hover{border-color:var(--accent-dim); background:#241A3E;}
+  .opt:active{transform:scale(0.99);}
+  .opt.picked{border-color:var(--accent); background:#2A2049;}
+
+  .progress-dots{
+    display:flex;
+    gap:6px;
+    margin-top:22px;
+    justify-content:center;
+  }
+  .progress-dots span{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--card-line);
+  }
+  .progress-dots span.filled{background:var(--accent);}
+
+  /* ---- results ---- */
+  .results{display:none;}
+  .results.show{display:block;}
+  .stage.hide{display:none;}
+
+  .result-header{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:var(--radius);
+    padding:26px;
+    margin-bottom:18px;
+  }
+  .result-header h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:22px;
+    margin-bottom:10px;
+  }
+  .result-header p{
+    color:var(--text-muted);
+    font-size:14.5px;
+    line-height:1.6;
+  }
+
+  .block-card{
+    background:var(--card);
+    border:1px solid var(--card-line);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    margin-bottom:14px;
+  }
+  .block-top{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .status-pill{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.03em;
+    padding:4px 10px;
+    border-radius:20px;
+  }
+  .status-pill.ok{background:rgba(127,217,166,0.14); color:var(--ok);}
+  .status-pill.warn{background:rgba(240,168,91,0.14); color:var(--warn);}
+  .block-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:16px;
+    font-weight:600;
+  }
+  .block-text{
+    color:var(--text-muted);
+    font-size:14.5px;
+    line-height:1.6;
+  }
+
+  .video-card{
+    border:1px dashed var(--accent-dim);
+    border-radius:14px;
+    padding:16px 18px;
+    margin-top:14px;
+    background:rgba(182,156,255,0.05);
+  }
+  .video-card .vtag{
+    font-size:11px;
+    color:var(--gold);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .video-card .vtitle{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px;
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .video-card .vdesc{
+    color:var(--text-muted);
+    font-size:13.5px;
+    line-height:1.5;
+  }
+
+  .cta{
+    margin-top:24px;
+    background:linear-gradient(135deg, #B69CFF, #8F6FE0);
+    border-radius:var(--radius);
+    padding:26px 24px;
+    text-align:center;
+  }
+  .cta p.small{
+    color:rgba(255,255,255,0.85);
+    font-size:13.5px;
+    margin-bottom:14px;
+    line-height:1.55;
+  }
+  .cta button{
+    background:#150B26;
+    color:#F4EFFF;
+    border:none;
+    padding:14px 26px;
+    border-radius:12px;
+    font-family:'Manrope', sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    cursor:pointer;
+    transition:transform .12s ease;
+  }
+  .cta button:hover{transform:translateY(-1px);}
+
+  .restart{
+    display:block;
+    margin:22px auto 0;
+    background:none;
+    border:none;
+    color:var(--text-muted);
+    font-size:13px;
+    text-decoration:underline;
+    cursor:pointer;
+  }
+
+  @media (max-width:480px){
+    .signals{gap:8px;}
+    .signal{padding:10px 8px 12px;}
+    .signal-label{font-size:10px;}
+    .card{padding:22px 18px 20px;}
+    .qtext{font-size:18px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="brand"><span class="dot"></span>Living & Working</div>
+  <h1>Готовы ли вы к международному собесу?</h1>
+  <p class="lede">9 вопросов — 3 минуты. В конце покажем твою точку А по трём зонам, от которых реально зависит собес.</p>
+
+  <div class="signals" id="signals"></div>
+
+  <div class="stage" id="stage">
+    <div class="qcounter" id="qcounter">Вопрос 1 из 9</div>
+    <div class="card">
+      <div class="qtext" id="qtext"></div>
+      <div class="options" id="options"></div>
+    </div>
+    <div class="progress-dots" id="dots"></div>
+  </div>
+
+  <div class="results" id="results"></div>
+
+</div>
+
+<script>
+// ===== Настройки =====
+// Ссылка для кнопки «Собрать мою дорожную карту к офферу»:
+// форма записи, сайт, или t.me/username — откроется прямо в Telegram.
+const CTA_URL = '';
+
+// ===== Telegram Mini App =====
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  try { tg.setHeaderColor('#130B20'); tg.setBackgroundColor('#130B20'); } catch(e){}
+}
+function haptic(type){
+  try{
+    if(!tg || !tg.HapticFeedback) return;
+    if(type==='select') tg.HapticFeedback.selectionChanged();
+    else tg.HapticFeedback.notificationOccurred(type);
+  }catch(e){}
+}
+function openCta(){
+  haptic('success');
+  if(!CTA_URL){
+    const msg='Здесь будет ссылка на созвон / форму записи';
+    tg ? tg.showAlert(msg) : alert(msg);
+    return;
+  }
+  if(tg){
+    if(/^https:\/\/t\.me\//.test(CTA_URL)) tg.openTelegramLink(CTA_URL);
+    else tg.openLink(CTA_URL);
+  } else {
+    window.open(CTA_URL,'_blank');
+  }
+}
+function restart(){
+  current=0; answers=[];
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('results').innerHTML='';
+  document.getElementById('stage').classList.remove('hide');
+  renderSignals(); renderQuestion();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+const BLOCKS = [
+  { key:'b1', label:'Спонтанная речь под давлением' },
+  { key:'b2', label:'Структура ответов и лексика' },
+  { key:'b3', label:'Уверенность и культурный код' }
+];
+
+const QUESTIONS = [
+  // Block 1
+  { block:0, q:"Просят рассказать о себе на собесе — и что в итоге?", opts:[
+    {t:"Спокойно говорю 2-3 минуты, не сбиваюсь", s:2},
+    {t:"В голове всё есть на русском, но пока перевожу на ходу — теряю нить", s:1},
+    {t:"Знаю, что хочу сказать, но вслух путаюсь и боюсь ляпнуть что-то не то", s:0}
+  ]},
+  { block:0, q:"Задают вопрос, к которому не готовился(ась). Что в голове?", opts:[
+    {t:"Собираюсь и отвечаю без паники", s:2},
+    {t:"Нужна пауза, чтобы сложить фразу в голове, но справляюсь", s:1},
+    {t:"Зависаю и не могу выдавить из себя ни слова", s:0}
+  ]},
+  { block:0, q:"Как у тебя вообще с реальными собесами на английском?", opts:[
+    {t:"Проходил(а), и в целом было норм", s:2},
+    {t:"Проходил(а), но каждый раз мучение — знаю, о чём говорю, а язык подводит", s:1},
+    {t:"Или не было ни разу, или было — и закончилось неловкой тишиной", s:0}
+  ]},
+  // Block 2
+  { block:1, q:"Просят рассказать про твой опыт или результат — как строишь ответ?", opts:[
+    {t:"Чётко: что было, что сделал(а), какой результат", s:2},
+    {t:"Рассказываю, но это скорее пересказ, чем история про то, что я сделал(а) крутого", s:1},
+    {t:"Говорю в общих словах — цифр и конкретики не хватает", s:0}
+  ]},
+  { block:1, q:"Резюме и сопроводительное на английском — как ощущения?", opts:[
+    {t:"Уверен(а), что звучит профессионально", s:2},
+    {t:"Написал(а), но где-то внутри тревожно — вдруг именно язык вызовет вопросы", s:1},
+    {t:"Собрал(а) из шаблонов, сам(а) не до конца понимаю, что там написано", s:0}
+  ]},
+  { block:1, q:"Нужно объяснить конкретный кейс с цифрами или показателями — что происходит?", opts:[
+    {t:"Легко перехожу на профессиональную лексику, звучу по делу", s:2},
+    {t:"Термины знаю, но фразу собираю медленно, будто по кусочкам", s:1},
+    {t:"На русском объяснил(а) бы за минуту, а на английском не могу точно передать мысль", s:0}
+  ]},
+  // Block 3
+  { block:2, q:"Small talk в начале звонка — как дела, как погода — что чувствуешь?", opts:[
+    {t:"Нормально, это просто разговор", s:2},
+    {t:"Справляюсь, но немного зажат(а)", s:1},
+    {t:"Не понимаю, зачем это вообще, и теряюсь с первой минуты", s:0}
+  ]},
+  { block:2, q:"Что чувствуешь, когда думаешь о собесе в иностранной компании?", opts:[
+    {t:"Волнуюсь, но знаю, что справлюсь", s:2},
+    {t:"Очень хочется попробовать, но постоянно откладываю", s:1},
+    {t:"Так страшно, что чаще всего даже не подаю заявку", s:0}
+  ]},
+  { block:2, q:"Как ты оцениваешь себя рядом с другими кандидатами на такую позицию?", opts:[
+    {t:"Понимаю, что мой уровень вполне достаточен для этой роли", s:2},
+    {t:"Кажется, что надо \u00abпрокачать всё и сразу\u00bb, чтобы вообще не стыдно было идти", s:1},
+    {t:"Заранее уверен(а), что возьмут кого-то другого, даже не пробуя", s:0}
+  ]}
+];
+
+const RESULTS = {
+  0: {
+    title: "Спонтанная речь и грамматика под давлением",
+    ok: "Спонтанная речь — не твоя слабая точка. Ты держишь мысль под давлением, не теряешь структуру, когда нервничаешь. Это база, без которой всё остальное не работает — а у тебя она есть.",
+    warn: "Ты замечаешь: то, что легко звучит на русском, на английском рассыпается на паузы и потерянные слова. Это классика — «хорошо говорю на английском» и «хорошо говорю на английском о работе» под давлением звучат как два разных навыка. Если запнулся — это нормально: можно и нужно озвучивать свой мыслительный процесс вслух, а не судорожно молчать в поиске идеального слова.",
+    video: {
+      tag: "Видео по твоей теме",
+      title: "Почему ты теряешься на собесе, даже если всё знаешь",
+      desc: "Разница между «знаю, что сказать» и «могу сказать это вслух под давлением», техника озвучивания мыслительного процесса и фразы-заготовки на выигрыш времени."
+    }
+  },
+  1: {
+    title: "Структура ответов и профессиональная лексика",
+    ok: "Ты умеешь выстроить ответ по делу: ситуация → действие → результат. Рассказ о себе и своих кейсах звучит профессионально, а не как черновой перевод с русского.",
+    warn: "Ты знаешь, ЧТО хочешь сказать, но ответ разваливается на общие слова без конкретики. Это чинится структурой, а не словарным запасом: «расскажи о себе» — не свободный рассказ, а конкретная последовательность (кто ты → в каких индустриях/с какими клиентами работал → ключевые скиллы → текущая ситуация → почему в поиске → предложение углубиться). Когда есть каркас — пропадает и паника, и ощущение «а что вообще говорить».",
+    video: {
+      tag: "Видео по твоей теме",
+      title: "Формула ответа, которая работает на любой вопрос про твой опыт",
+      desc: "Готовый каркас self-presentation, что делать, если релевантного опыта нет, и STAR-логика для behavioral-вопросов."
+    }
+  },
+  2: {
+    title: "Уверенность и культурный код собеседования",
+    ok: "Small talk, культурный код, ощущение «а вдруг возьмут кого-то другого» — это тебя не парализует. Ты понимаешь, зачем задают тот или иной вопрос, и не теряешься от неожиданных поворотов разговора.",
+    warn: "Дело не только в языке — дело в среде. Уметь говорить со своим репетитором не равно говорить на языке в культуре: тепличные условия 1-на-1 не готовят к живому, непредсказуемому разговору с незнакомыми людьми. На собесе обычно 6 типов вопросов: icebreaker & motivation, deep-dive по проекту, behavioral, situational/hypothetical, culture fit и логистика/зарплата — и большинство готовится только к первому. Отсюда ощущение, что тебя застали врасплох, хотя вопросы вполне предсказуемы.",
+    video: {
+      tag: "Видео по твоей теме",
+      title: "Собес — это не одно испытание, а 6 предсказуемых разговоров",
+      desc: "Разбор 6 типов вопросов с примерами, что на самом деле проверяет culture fit, и как не уходить от темы, если вопрос застал врасплох."
+    }
+  }
+};
+
+let current = 0;
+let answers = [];
+
+function renderSignals(){
+  const wrap = document.getElementById('signals');
+  wrap.innerHTML = BLOCKS.map((b,i)=>`
+    <div class="signal" id="signal-${i}">
+      <div class="signal-label">${b.label}</div>
+      <div class="bars"><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+  `).join('');
+}
+
+function renderDots(){
+  const dots = document.getElementById('dots');
+  dots.innerHTML = QUESTIONS.map((_,i)=>`<span class="${i<current?'filled':''}"></span>`).join('');
+}
+
+function renderQuestion(){
+  document.getElementById('qcounter').textContent = `Вопрос ${current+1} из ${QUESTIONS.length}`;
+  const q = QUESTIONS[current];
+  document.getElementById('qtext').textContent = q.q;
+  const optsWrap = document.getElementById('options');
+  optsWrap.innerHTML = q.opts.map((o,i)=>`<button class="opt" data-i="${i}">${o.t}</button>`).join('');
+  optsWrap.querySelectorAll('.opt').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if(btn.disabled) return;
+      optsWrap.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+      btn.classList.add('picked');
+      haptic('select');
+      const idx = parseInt(btn.dataset.i);
+      answers.push({block:q.block, score:q.opts[idx].s});
+      // light up current block meter
+      const sig = document.getElementById(`signal-${q.block}`);
+      sig.classList.add('active');
+      current++;
+      renderDots();
+      if(current < QUESTIONS.length){
+        setTimeout(renderQuestion, 180);
+      } else {
+        setTimeout(showResults, 250);
+      }
+    });
+  });
+  renderDots();
+}
+
+function showResults(){
+  document.getElementById('stage').classList.add('hide');
+  haptic('success');
+  window.scrollTo({top:0, behavior:'smooth'});
+
+  const blockScores = [0,0,0];
+  answers.forEach(a=> blockScores[a.block]+=a.score );
+
+  const weakBlocks = [];
+  blockScores.forEach((s,i)=>{
+    const sig = document.getElementById(`signal-${i}`);
+    sig.classList.remove('active');
+    if(s <= 4){
+      sig.classList.add('done-warn');
+      weakBlocks.push(i);
+    } else {
+      sig.classList.add('done-ok');
+    }
+  });
+
+  let headerHTML, blocksHTML, ctaExtra='';
+  if(weakBlocks.length === 0){
+    headerHTML = `
+      <h2>Твоя точка А перед международным собесом</h2>
+      <p>Все три зоны — сильные, и это редкость. Английский не обязан быть идеальным — он должен быть применимым, и у тебя он именно такой.</p>`;
+    blocksHTML = BLOCKS.map((b,i)=>`
+      <div class="block-card">
+        <div class="block-top">
+          <span class="status-pill ok">ОК</span>
+          <span class="block-title">${RESULTS[i].title}</span>
+        </div>
+        <div class="block-text">${RESULTS[i].ok}</div>
+      </div>
+    `).join('') + `
+      <div class="block-card">
+        <div class="block-top"><span class="block-title">Что дальше?</span></div>
+        <div class="block-text">Международный собес — это ещё и нюансы культурного кода, которые тест не ловит: как звучать «своим» в команде, а не просто грамотно говорящим кандидатом. Здесь дело уже не в базе, а в оттачивании деталей — и это разговор для отдельной встречи.</div>
+      </div>`;
+  } else {
+    // pick weakest (lowest score); tie -> prefer block 0
+    let target = weakBlocks[0];
+    weakBlocks.forEach(i=>{
+      if(blockScores[i] < blockScores[target]) target = i;
+    });
+
+    headerHTML = `
+      <h2>Твоя точка А перед международным собесом</h2>
+      <p>Английский не обязан быть идеальным — он должен быть применимым. Собес — это не экзамен по грамматике, а конкретный набор сценариев, и к каждому можно подготовиться отдельно. Вот что у тебя уже работает, а что стоит подтянуть в первую очередь.</p>`;
+
+    blocksHTML = BLOCKS.map((b,i)=>{
+      const isWeak = weakBlocks.includes(i);
+      const pill = isWeak ? '<span class="status-pill warn">Подтянуть</span>' : '<span class="status-pill ok">ОК</span>';
+      const text = isWeak ? RESULTS[i].warn : RESULTS[i].ok;
+      let videoHTML = '';
+      if(i === target){
+        const v = RESULTS[i].video;
+        videoHTML = `
+          <div class="video-card">
+            <div class="vtag">${v.tag}</div>
+            <div class="vtitle">${v.title}</div>
+            <div class="vdesc">${v.desc}</div>
+          </div>`;
+      }
+      return `
+        <div class="block-card">
+          <div class="block-top">${pill}<span class="block-title">${RESULTS[i].title}</span></div>
+          <div class="block-text">${text}</div>
+          ${videoHTML}
+        </div>`;
+    }).join('');
+  }
+
+  document.getElementById('results').innerHTML = `
+    <div class="result-header">${headerHTML}</div>
+    ${blocksHTML}
+    <div class="cta">
+      <p class="small">Не нужно избегать практики общения на английском в рабочих контекстах. Лучше всего тренироваться в группе — с людьми, которые проходят то же самое, воспроизводя реальные сценарии и кейсы.</p>
+      <button onclick="openCta()">Собрать мою дорожную карту к офферу</button>
+    </div>
+    <button class="restart" onclick="restart()">Пройти тест заново</button>
+  `;
+  document.getElementById('results').classList.add('show');
+}
+
+renderSignals();
+renderQuestion();
+</script>
+</body>
+</html>
